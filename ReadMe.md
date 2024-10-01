@@ -1,4 +1,2 @@
-
-## Packages
-- Configuration 
-    -  [dot-env](https://www.npmjs.com/package/dotenv)
+# blog-post
+A blog post platform for levelup bootcamp
