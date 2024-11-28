@@ -1,14 +1,102 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int    @id @default(autoincrement())
+  email      String @unique
+  first_name String
+  last_name  String
+  password   String
+
+  social    SocialProfile?
+  social_id Int            @unique
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+
+  author Author?
+
+  ContactInfo ContactInfo[]
+  Comment     Comment[]
+}
+
+model SocialProfile {
+  id        Int     @id @default(autoincrement())
+  linked_in String?
+  twitter   String?
+  facebook  String?
+  tiktok    String?
+  thread    String?
+  user      User    @relation(fields: [user_id], references: [id])
+  user_id   Int     @unique
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+}
+
+model Author {
+  id                 Int    @id @default(autoincrement())
+  biography          String
+  sponsorship_detail String
+
+  User    User @relation(fields: [user_id], references: [id])
+  user_id Int  @unique
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+
+  Blog Blog[]
+}
+
+model Blog {
+  id           Int      @id @default(autoincrement())
+  author       Author   @relation(fields: [author_id], references: [id])
+  author_id    Int      @unique
+  title        String?
+  content      String?
+  views        Int      @default(0)
+  images       String // json string
+  published    Boolean
+  published_at DateTime @default(now())
+  comments     Int      @default(0)
+  likes        Int      @default(0)
+  bookmark     Boolean
+  created_at   DateTime @default(now())
+  updated_at   DateTime @default(now())
+  Comment      Comment?
+}
+
+model ContactInfo {
+  id           Int    @id @default(autoincrement())
+  user         User   @relation(fields: [user_id], references: [id])
+  user_id      Int
+  phone_number String // json array
+  city         String
+  state        String
+  zip_code     String
+
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+}
+
+model Comment {
+  id Int @id @default(autoincrement())
+
+  user    User @relation(fields: [user_id], references: [id])
+  user_id Int
+  blog    Blog @relation(fields: [blog_id], references: [id])
+  blog_id Int  @unique
+
+  likes      Int      @default(0)
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
 }
