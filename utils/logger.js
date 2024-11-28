@@ -15,6 +15,14 @@ const logger = winston.createLogger({
                 winston.format.simple(),
                 winston.format.errors({ stack: true }),
             )
+        }),
+        new winston.transports.File({
+            level: 'error',
+            name: 'tmp',
+            filename: 'tmp.log',
+            dirname: process.cwd(),
+            maxsize: 4096,
+            zippedArchive: true
         })
     ]
 });
