@@ -11,25 +11,33 @@ require('dotenv')
     })
 
 
+    const configSchema = Joi.object({
+        database: Joi.object({
+            port: Joi.number().required(),
+            username: Joi.string().alphanum().min(8).max(20).required(),
+            password: Joi.string().pattern(new RegExp('^[a-zA-Z0-9]{3,30}$')),
+            hostName: Joi.string(),
+        }),
+        application: Joi.object({
+            port: Joi.number().required(),
+            hostName: Joi.string().required()
+        })
+    });
+
+    
 const config = {
     database: {
-        username: process.env.DB_USERNAME || "",
-        password:  process.env.DB_PASSWORD || "",
+        username: process.env.DB_USERNAME  ||  "sheriff923",
+        password:  process.env.DB_PASSWORD || "CyberNinja2024",
         port:  process.env.DB_PORT || 4948,
+        hostName:  process.env.DB_HOST || "victor.org",
     },
+    application: {
+        port: process.env.APP_PORT || 9090,
+        hostName: process.env.APP_HOST || "0.0.0.0",
+    }
 }
 
-const configSchema = Joi.object({
-    database: Joi.object({
-        port:Joi.number().required(),
-        username: Joi.string().alphanum().min(8).max(20).required(),
-        password: Joi.string().pattern(new RegExp('^[a-zA-Z0-9]{3,30}$')),
-        hostname: Joi.string(),
-    }),
-    application: Joi.object({
-
-    })
-});
 
 const {error} = configSchema.validate(config,{abortEarly:false});
 
@@ -42,5 +50,3 @@ if (error){
 }
 
 module.exports = config;
-
-
