@@ -4,12 +4,15 @@ const logger = require("./utils/logger");
 const Limiter = require("ratelimiter");
 const { createClient } =  require("redis");
 const { InternalServerError, BadRequestError } = require("./errors/http");
-// const db =  require("./db/client");
+const { RegisterUserSchema } = require("./validators/validator");
+const {default: httpCodes} =  require("http-status");
+
+const { hashPassword } = require("./utils/bcrypt");
 const app = express();
 const cache = await createClient()
   .on('error', err => console.log('Redis Client Error', err))
   .connect();
-
+const db =  require("./db/client")(config);
 const {port,hostName} =  config.application; // destructing 
 
 // JSON PARSING MIDDLEWARE
@@ -45,10 +48,34 @@ app.use(function(request,response,next){
 */
 
 
-app.post("/user",function (request,response,next){
+app.post("/user",async function (request,response){
   const payload = request.body;
+  const  {error} = RegisterUserSchema.validate(payload)
+  if (error){
+    return response.status(httpCodes.BAD_REQUEST).json({
+      "success": false,
+      "error": error.details.map(err=>(err.message)),
+      "data":{}
+    })
+  }
+
+  const { email, first_name, last_name } = payload;
+  const hashed = hashPassword(payload.password)
   
-  registerUserSchema.validate(payload)
+  const result = await db.user.create({
+    data: { email, first_name, last_name, password: hashed },
+    select: { email:true,first_name:true,last_name: true}
+  })
+
+  logger.info(`successfully created a user with email: ${result.email}`);
+
+  // TODO:  How to mail 
+
+  return response.json(httpCodes.CREATED).json({
+      "success": true,
+      "error": {},
+      "data": result,
+  })
 })
 
 // GLOBAL ERROR HANDLER
