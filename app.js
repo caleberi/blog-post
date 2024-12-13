@@ -4,17 +4,20 @@ const logger = require("./utils/logger");
 const Limiter = require("ratelimiter");
 const { createClient } =  require("redis");
 const { InternalServerError, BadRequestError } = require("./errors/http");
-const { RegisterUserSchema } = require("./validators/validator");
+const { RegisterUserSchema, LoginUserSchema } = require("./validators/validator");
 const {default: httpCodes} =  require("http-status");
 
-const { hashPassword } = require("./utils/bcrypt");
+const { hashPassword, comparePassword } = require("./utils/bcrypt");
+const  {default: Mailer}  = require("./utils/mailer");
+const  generateJwtToken  = require("./utils/jwt").default;
+
 const app = express();
 const cache = await createClient()
   .on('error', err => console.log('Redis Client Error', err))
   .connect();
 const db =  require("./db/client")(config);
 const {port,hostName} =  config.application; // destructing 
-
+const mailer = new Mailer(config.mail); //
 // JSON PARSING MIDDLEWARE
 app.use(express.json({extended:true}))
 // REQUEST LOGGING MIDDLEWARE
@@ -48,7 +51,7 @@ app.use(function(request,response,next){
 */
 
 
-app.post("/user",async function (request,response){
+app.post("/register",async function (request,response){
   const payload = request.body;
   const  {error} = RegisterUserSchema.validate(payload)
   if (error){
@@ -69,12 +72,54 @@ app.post("/user",async function (request,response){
 
   logger.info(`successfully created a user with email: ${result.email}`);
 
-  // TODO:  How to mail 
+  await mailer.sendMail(config.mail.from,email,{
+    subject: "Registration", 
+    text: "You have successfully registered."
+  });
 
   return response.json(httpCodes.CREATED).json({
       "success": true,
       "error": {},
       "data": result,
+  })
+})
+
+app.post("/login", async function(request, response){
+  const payload = request.body;
+  const  {error} = LoginUserSchema.validate(payload)
+  if (error){
+    return response.status(httpCodes.BAD_REQUEST).json({
+      "success": false,
+      "error": error.details.map(err=>(err.message)),
+      "data":{}
+    })
+  }
+
+  const { email, password } = payload;
+  const user = await db.user.findUnique({
+    where: { email },
+    select: { 
+      password: true, 
+      id:true, 
+      first_name: true , 
+      last_name:true
+    },
+  });
+
+  if (!comparePassword(password,user.password)) {
+    return response.status(httpCodes.BAD_REQUEST).json({
+      "success": false,
+      "error": "You are a cheat lol, password incorrect",
+      "data":{}
+    })
+  }
+
+  const loginCredentials =  await generateJwtToken(user,config);
+
+  return response.json(httpCodes.CREATED).json({
+    "success": true,
+    "error": {},
+    "data": loginCredentials,
   })
 })
 

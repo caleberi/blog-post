@@ -21,6 +21,11 @@ require('dotenv')
         application: Joi.object({
             port: Joi.number().required(),
             hostName: Joi.string().required()
+        }),
+        mail: Joi.object({
+            from: Joi.string().required(),
+            port: Joi.number().required(),
+            hostName: Joi.string().required()
         })
     });
 
@@ -35,6 +40,11 @@ const config = {
     application: {
         port: process.env.APP_PORT || 9090,
         hostName: process.env.APP_HOST || "0.0.0.0",
+    },
+    mail: {
+        from: process.env.MAIL_FROM  || "",
+        port: process.env.MAIL_PORT || 9090,
+        hostName: process.env.MAIL_HOST || "0.0.0.0",
     }
 }
 
