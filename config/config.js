@@ -26,6 +26,12 @@ require('dotenv')
             from: Joi.string().required(),
             port: Joi.number().required(),
             hostName: Joi.string().required()
+        }),
+        jwt: Joi.object({
+            algorithm: Joi.string().required().default("HS256"),
+            secret: Joi.string().required(),
+            expiresIn: Joi.string().required(),
+            issuer: Joi.string().required(),
         })
     });
 
@@ -45,7 +51,14 @@ const config = {
         from: process.env.MAIL_FROM  || "",
         port: process.env.MAIL_PORT || 9090,
         hostName: process.env.MAIL_HOST || "0.0.0.0",
+    },
+    jwt: {
+        algorithm: process.env.JWT_ALGORITHM || "HS256",
+        secret:  process.env.JWT_SECRET || "sutuhqu5-0q%^&#@*1",
+        expiresIn: process.env.JWT_EXPIRE_IN || "2d",
+        issuer: process.env.JWT_ISSUER || "victor001",
     }
+
 }
 
 

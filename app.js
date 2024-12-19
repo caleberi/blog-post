@@ -9,7 +9,7 @@ const {default: httpCodes} =  require("http-status");
 
 const { hashPassword, comparePassword } = require("./utils/bcrypt");
 const  {default: Mailer}  = require("./utils/mailer");
-const  generateJwtToken  = require("./utils/jwt").default;
+const  {generateJwtToken}  = require("./utils/jwt");
 
 const app = express();
 const cache = await createClient()
@@ -114,12 +114,13 @@ app.post("/login", async function(request, response){
     })
   }
 
-  const loginCredentials =  await generateJwtToken(user,config);
-
+  const token =  await generateJwtToken(user);
   return response.json(httpCodes.CREATED).json({
     "success": true,
     "error": {},
-    "data": loginCredentials,
+    "data": {
+      "authToken": token,
+    },
   })
 })
 
