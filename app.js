@@ -3,13 +3,13 @@ const express = require('express');
 const logger = require("./utils/logger");
 const Limiter = require("ratelimiter");
 const { createClient } =  require("redis");
-const { InternalServerError, BadRequestError } = require("./errors/http");
+const { InternalServerError, BadRequestError, UnauthorizedError } = require("./errors/http");
 const { RegisterUserSchema, LoginUserSchema } = require("./validators/validator");
 const {default: httpCodes} =  require("http-status");
 
 const { hashPassword, comparePassword } = require("./utils/bcrypt");
 const  {default: Mailer}  = require("./utils/mailer");
-const  {generateJwtToken}  = require("./utils/jwt");
+const  {generateJwtToken, verifyJwtToken}  = require("./utils/jwt");
 
 const app = express();
 const cache = await createClient()
@@ -122,6 +122,25 @@ app.post("/login", async function(request, response){
       "authToken": token,
     },
   })
+})
+
+
+app.use(async function (req,res,next){
+  if (!req.header['authorization']) {
+    return next(new UnauthorizedError("Unauthorized request"))
+  }
+
+  const fragments = req.header['authorization'].split(" ")
+  const [_, token] = fragments;
+
+  try {
+    const user = await  verifyJwtToken(token);
+    // TODO: ASSIGNMENT  -  fetch the user from the db and attach the user to the request.
+    req.user = user;
+    next();
+  } catch(err){
+    return next(err);
+  }
 })
 
 // GLOBAL ERROR HANDLER
