@@ -124,7 +124,6 @@ app.post("/login", async function(request, response){
   })
 })
 
-
 app.use(async function (req,res,next){
   if (!req.header['authorization']) {
     return next(new UnauthorizedError("Unauthorized request"))
@@ -134,14 +133,36 @@ app.use(async function (req,res,next){
   const [_, token] = fragments;
 
   try {
-    const user = await  verifyJwtToken(token);
-    // TODO: ASSIGNMENT  -  fetch the user from the db and attach the user to the request.
+    const payload = await  verifyJwtToken(token);
+    const user = await db.user.findUnique({ where:{id : payload.id},select:{id:true,email:true,first_name:true,last_name:true}})
     req.user = user;
     next();
   } catch(err){
     return next(err);
   }
 })
+
+
+app.get("/user/profile",function (req,res){
+  return response.status(200).json({
+    success: true,
+    message: "Here is your profile",
+    data: req.user
+ })
+})
+
+
+app.delete("/user/profile",async function(req,res){
+  await db.user.delete({where: {id:  req.user.id}});
+  return response.status(200).json({
+    success: true,
+    message: "profile deleted",
+    data: {}
+ })
+})
+
+
+
 
 // GLOBAL ERROR HANDLER
 app.use(function globalErrorHandler(err, request, response, next) {
